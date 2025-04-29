@@ -1,283 +1,314 @@
-# EC2
+# Amazon EC2
 
-- It mainly consists of the following capabilities:
-    - Renting virtual machines in the cloud (EC2)
-    - Storing data on virtual drives (EBS)
-    - Distributing load across multiple machines (ELB)
-    - Scaling the services using an auto-scaling group (ASG)
+- EC2 is one of the most popular of AWS' offering
+- EC2 = Elastic Compute Cloud = Infrastructure as a Service
+- It mainly consists in the capability of:
+  - Renting virtual machines (EC2)
+  - Storing data on virtual drives (EBS)
+  - Distributing load across machines (ELB)
+  - Scaling the services using an auto-scaling group (ASG)
 
-## Introduction to Security Groups (SG)
+- Knowing EC2 is fundamental to understand how the Cloud works
 
-- Security Groups are the fundamental of networking security in AWS
-- They control how traffic is allowed into or out of EC2 machines
-- Basically they are firewalls
+## EC2 sizing & configuration options
 
-## Security Groups Deep Dive
-
-- Security groups regulate:
-    - Access to ports
-    - Authorized IP ranges - IPv4 and IPv6
-    - Control of inbound and outbound network traffic
-- Security groups can be attached to multiple instances
-- They are locked down to a region/VPC combination
-- They do live outside of the EC2 instances - if traffic is blocked the EC2 instance wont be able to see it
-- *It is good to maintain one separate security group for SSH access*
-- If the request for the application times out, it is most likely a security group issue
-- If for the request the response is a "connection refused" error, then it means that it is an application error and the traffic went through the security group
-- By default all inbound traffic is **blocked** and all outbound traffic is **authorized**
-- A security group can allow traffic from another security group. A security group can reference another security group, meaning that it is no need to reference the IP of the instance to which the security group is attached
-
-## Elastic IP
-
-- When an EC2 instance is stopped and restarted, it may change its public IP address
-- In case there is a need for a fixed IP for the instance, Elastic IP is the solution
-- An Elastic IP is a public IP the user owns as long as the IP is not deleted by the owner
-- With Elastic IP address, we can mask the failure of an instance by  rapidly remapping the address to another instance 
-- AWS provides a limited number of 5 Elastic IPs (soft limit)
-- Overall it is recommended to avoid using Elastic IP, because:
-    - They often reflect pool arhcitectural decisions
-    - Instead, us e a random public IP and register a DNS name to it
+- Operating System (OS): Linux, Windows or Mac OS
+- How much compute power & cores (CPU)
+- How much random-access memory (RAM)
+- How much storage space:
+  - Network-attached (EBS & EFS)
+  - Hardware (EC2 Instance Store)
+- Network card: speed of the card, Public IP address
+- Firewall rules: security group
+- Bootstrap script (configure at first launch): EC2 User Data
 
 ## EC2 User Data
 
-- It is possible to bootstrap (run commands for setup) an EC2 instance using EC2 User data script
-- The user data script is only run once at the first start of the instance
+- It is possible to bootstrap our instances using an EC2 User Data script.
+- Bootstrapping means launching commands when a machine starts
+- That script is only run once at the instance first start
 - EC2 user data is used to automate boot tasks such as:
-    - Installing update
-    - Installing software
-    - Downloading common files from the internet
-    - Any other start-up task
-- THe EC2 user data scripts run with root user privileges
+  - Installing updates
+  - Installing software
+  - Downloading common files from the internet
+  - Anything you can think of
+- The EC2 User Data Script runs with the root user
 
-## EC2 Instance Launch Types
+## EC2 Instance Types - Overview
 
-- On Demand Instances: short workload, predictable pricing
-- Reserved: known amount of time (minimum 1 year). Types of reserved instances:
-    - Reserved Instances: recommended long workloads
-    - Convertible Reserved Instances: recommended for long workloads with flexible instance types
-    - Scheduled Reserved Instances: instances reserved for a longer period used at a certain schedule 
-- Spot Instances: for short workloads, they are cheap, but there is a risk of losing the instance while running
-- Dedicated Instances: no other customer will share the underlying hardware
-- Dedicated Hosts: book an entire physical server, can control the placement of the instance
+- You can use different types of EC2 instances that are optimised for different use cases ([link](https://aws.amazon.com/ec2/instance-types/))
+- AWS has the following naming convention:
 
-### EC2 On Demand
+  ```
+  m5.2xlarge
+  ```
 
-- Pay for what we use, billing is done per second after the first minute
-- Hast the higher cost but it does not require upfront payment
-- Recommended for short-term and uninterrupted workloads, when we can't predict how the application will behave
+  - `m`: instance class
+  - `5`: generation (AWS improves them over time)
+  - `2xlarge`: size within the instance class
 
-### EC2 Reserved Instances
+## EC2 Instance Types – General Purpose
 
-- Up to 75% discount compared to On-demand
-- Pay upfront for a given time, implies long term commitment
-- Reserved period can be 1 or 3 years
-- We can reserve a specific instance type
-- Recommended for steady state usage applications (example: database)
-- **Convertible Reserved Instances**:
-    - The instance type can be changed
-    - Up to 54% discount
-- **Scheduled Reserved Instances**:
-    - The instance can be launched within a time window
-    - It is recommended when is required for an instance to run at certain times of the day/week/month
+- Great for a diversity of workloads such as web servers or code repositories
+- Balance between:
+  - Compute
+  - Memory
+  - Networking
+- In the course, we will be using the `t2.micro`, which is a General Purpose EC2 instance
 
-### EC2 Spot Instances
+### Examples of General Purpose instance families
 
-- We can get up to 90% discount compared to on-demand instances
-- It is recommended for workloads which are resilient to failure since the instance can be stopped by the AWS if our max price is less then the current spot price
-- Not recommended for critical jobs or databases
-- Great combination: reserved instances for baseline performance + on-demand and spot instances for peak times
+Mac, T4g, T3, T3a, T2, M6g, M5, M5a, M5n, M5zn, M4, A1
 
-### EC2 Dedicated Hosts
+## EC2 Instance Types – Compute Optimized
 
-- Physical dedicated EC2 server
-- Provides full control of the EC2 instance placement
-- It provides visibility to the underlying sockets/physical cores of the hardware
-- It requires a 3 year period reservation
-- Useful for software that have complicated licensing models or for companies that have strong regulatory compliance needs
+- Great for compute-intensive tasks that require high performance processors:
+  - Batch processing workloads
+  - Media transcoding
+  - High performance web servers
+  - High performance computing (HPC)
+  - Scientific modeling & machine learning
+  - Dedicated gaming servers
 
-### EC2 Dedicated Instances
+### Examples of Compute Optimized instance families
 
-- Instances running on hardware that is dedicated to a single account
-- Instances may share hardware with other instances from the same account
-- No control over instance placement
-- Gives per instance billing
+C6g, C6gn, C5, C5a, C5n, C4
 
-## EC2 Spot Instances - Deep Dive
+## EC2 Instance Types – Memory Optimized
 
-- With a spot instance we can get a discount up to 90%
-- We define a max spot price and get the instance if the current spot price < max spot price
-- The hourly spot price varies based on offer and capacity
-- If the current spot price goes over the selected max spot price we can choose to stop or terminate the instance within the next 2 minutes
-- Spot Block: block a spot instance during a specified time frame (1 to 6 hours) without interruptions. In rare situations an instance may be reclaimed
-- Spot request - with a spot request we define:
-    - Maximum price
-    - Desired number of instances
-    - Launch specifications
-    - Request type:
-        - One time request: as soon as the spot request is fulfilled the instances will be launched an the request will go away
-        - Persistence request: we want the desired number of instances to be valid as long as the spot request is active. In case the spot instances are reclaimed, the spot request will try to restart the instances as soon as the price goes down
-- Cancel a spot instance: we can cancel spot instance requests if it is in open, active or disabled state (not failed, canceled, closed)
-- Canceling a spot request does not terminate the launched instances. If we want to terminate a spot instance for good, first we have to cancel the spot request and the we can terminate the associated instances, otherwise the spot request may relaunch them
-
-### Spot Fleet
-
-- Spot Fleet is a set of spot instances and optional on-demand instances
-- The spot fleet will try to meet the target capacity with price constraints
-- AWS will launch instances from a launch pool, meaning we have to define the instance type, OS, AZ for a launch pool
-- We can have multiple launch pools from within the best one is chosen
-- If a spot a fleet reaches capacity or max cost, no more new instances are launched
-- Strategies to allocate spot instances in a spot fleet:
-    - **lowerPrice**: the instances will be launched from the pool with the lowest price
-    - **diversified**: launched instances will be distributed from all the defined pools
-    - **capacityOptimized**: launch with the optimal capacity based on the number of instances
-
-## EC2 Instance Types
-
-- R: applications that needs a lot of RAM - in-memory cache
-- C: applications that need good CPU -  compute/database
-- M: applications that are balanced - general / web app
-- I: applications that need good local I/O - databases
-- G: applications that need GPU - video rendering / ML
-- T2/T3 - burstable instances
-- T2/T3 unlimited: unlimited burst
-
-### Bustable Instances (T2/T3)
-
-- Overall the performance of the instance is OK
-- When the machine needs to process something unexpected (a spike load), it can burst and CPU can be very performant
-- If the machine bursts, it utilizes "burst credits"
-- If all the credits are gone, the CPU becomes bad
-- If the machine stops bursting, credits are accumulated over time
-- Credit usage / credit balance of a burstable instance can be seen in CloudWatch
-- CPU credits: bigger the instance the faster credit is earned
-- T2/T3 Unlimited: extra money can be payed in case the burst credits are used. There wont be any performance loss
-
-## AMI
-
-- AWS comes with lots of base images
-- Images can be customized ar runtime with EC2 User data
-- In case of more granular customization AWS allows creating own images - this is called an AMI
-- Advantages of a custom AMI:
-    - Pre-install packages
-    - Faster boot time (on need for the instance to execute the scripts from the user data)
-    - Machine configured with monitoring/enterprise software
-    - Security concerns - control over the machines in the network
-    - Control over maintenance
-    - Active Directory out of the box
-- An AMI is built for a specific region (NOT GLOBAL!)
-
-### Public AMI
-
-- We can leverage AMIs from other people
-- We can also pay for other people's AMI by the hour, basically renting the AMI form the AWS Marketplace
-- Warning: do not use AMI which is not trustworthy!
-
-### AMI Storage
-
-- An AMI takes space and they are stored in S3
-- AMIs by default are private and locker for account/region
-- We can make our AMIs public and share them with other people or sell them on the Marketplace
-
-### Cross Account AMI Sharing
-
-- It is possible the share AMI with another AWS account
-- Sharing an AMI does not affect the ownership of the AMI
-- If a shared AMI is copied, than the account who did the copy becomes the owner
-- To copy an AMI that was shared from another account, the owner of the source AMI must grant read permissions for the storage that backs the AMI, either the associated EBS snapshot or an associated S3 bucket
-- Limits:
-    - An encrypted AMI can not be copied. Instead, if the underlying snapshot and encryption key where shared, we can copy the snapshot while re-encrypting it with a key of our own. The copied snapshot can be registered as a new AMI
-    - We cant copy an AMI with an associated **billingProduct** code that was shared with us from another account. This includes Windows AMIs and AMIs from the AWS Marketplace. To copy a shared AMI with **billingProduct** code, we have to launch an EC2 instance from our account using the shared AMI and then create an AMI from source
-
-## Placement Groups
-
-- Sometimes we want to control how the EC2 instances are placed in the AWS infrastructure
-- When we create a placement group, we can specify one of the following placement strategies:
-    - **Cluster** - cluster instances into a low-latency group in a single AZ
-    - **Spread** - spread instances across underlying hardware (max 7 instances per group per AZ)
-    - **Partition** - spread instances across many different partitions (which rely on different sets of racks) within an AZ. Scale to 100s of EC2 instances per group (Hadoop, Cassandra, Kafka)
-
-### Placement Groups - Cluster
-
-- Pros: Great network (10Gbps bandwidth between instances)
-- Cons: if the rack fails, all instances fail at the time
+- Fast performance for workloads that process large data sets in memory
 - Use cases:
-    - Big data job that needs to complete fast
-    - Application that needs extremely low latency and high network throughput
+  - High performance, relational/non-relational databases
+  - Distributed web scale cache stores
+  - In-memory databases optimized for BI (business intelligence)
+  - Applications performing real-time processing of big unstructured data
 
-### Placement Groups - Spread
+### Examples of Memory Optimized instance families
 
-- Pros:
-    - Can span across multiple AZs
-    - Reduces risk for simultaneous failure
-    - EC2 instances are on different hardware
-- Cons:
-    - Limited to 7 instances per AZ per placement group
-- Use case:
-    - Application that needs to maximize high availability
-    - Critical applications where each instance must be isolated from failure
+R6g, R5, R5a, R5b, R5n, R4, X1e, X1, High Memory, z1d
 
-### Placement Groups - Partitions
+## EC2 Instance Types – Storage Optimized
 
-- Pros:
-    - Up to 7 partitions per AZ
-    - Can have hundreds of EC2 instances per AZ
-    - The instances in a partition do not share racks with the instances from other partitions
-    - A partition failure can effect many instances but they wont affect other partitions
-    - Instances get access to the partition information as metadata
-- Use cases: HDFS, HBase, Cassandra, Kafka
+- Great for storage-intensive tasks that require high, sequential read and write access to large data sets on local storage
+- Use cases:
+  - High frequency online transaction processing (OLTP) systems
+  - Relational & NoSQL databases
+  - Cache for in-memory databases (for example, Redis)
+  - Data warehousing applications
+  - Distributed file systems
 
-## Elastic Network Interfaces - ENI
+### Examples of Storage Optimized instance families
 
-- Logical component in a VPC that represents a virtual network card
-- An ENI can have the following attributes:
-    - Primary private IPv4 address, one or more secondary IPv4 addresses
-    - One Elastic IP (IPv4) per private IPv4
-    - One Public IPv4
-- ENI instances can be created independently from an EC2 instance
-- We can attach them on the fly to an EC2 instances or move them from one to another (useful for failover)
-- ENIs are bound to a specific available zone
-- ENIs can have security group attached to them
-- EC2 instances usually have a primary ENI (eth0). In case we attach a secondary ENI, eth1 interface will be available. The primary ENI can not be detached.
+I3, I3en, D2, D3, D3en, H1
 
-## EC2 Hibernate
+## Introduction to Security Groups
 
-- We can stop or terminate EC2 instances:
-    - If an instance is stopped: the data on the disk (EBS) is kept intact
-    - If an instance is terminated: any root EBS volume will also gets destroyed
-- On start, the following happens in case of an EC2 instance:
-    - Fist start: the OS boots and EC2 User data script is executed
-    - Following starts: the OS boots
-    - After the OS boot the applications start, cache gets warmed up, etc. which may take some time
-- EC2 Hibernate:
-    - All the data from RAM is preserved on shut-down
-    - The instance boot is faster
-    - Under the hood: the RAM state is written to a file in the root EBS volume
-    - The root EBS volume must be encrypted
-- Supported instance types for hibernate: C3, C4, C5, M3, M4, M5, R3, R4, R5
-- Supported OS types: Amazon Linux 1 and 2, Windows
-- Instance RAM size: must be less then 150 GB
-- Bare metal instances do not support hibernate
-- Root volume: must be EBS, encrypted, not instance store. And it must be large enough
-- Hibernate is available for on-demand and reserved instances
-- An instance can not hibernate for more than 60 days
+- Security Groups are the fundamental of network security in AWS
+- They control how traffic is allowed into or out of our EC2 Instances
+- Security groups only contain allow rules
+- Security groups rules can reference by IP or by security group
 
-## EC2 for Solution Architects
+## Security Groups – Deeper Dive
 
-- EC2 instances are billed by the second, t2.micro is free tier
-- On Linux/Mac we can use SSH, on Windows Putty or SSH
-- SSH is using port 22, the security group must allow our IP to be able to connect
-- In cas of a timeout, it is most likely a security group issue
-- Permission for SSH key => chmod 0400
-- Security groups can reference other security groups instead of IP addresses
-- EC2 instance can be customized at boot using EC2 User Data
-- 4 EC2 launch modes:
-    - On-demand
-    - Reserved
-    - Spot
-    - Dedicated hosts
-- We can create AMIs to pre-install software
-- An AMI can be copied through accounts and regions
-- EC2 instances can be started in placement groups:
-    - Cluster
-    - Spread
-    - Partition
+- Security groups are acting as a "firewall" on EC2 instances
+- They regulate:
+  - Access to Ports
+  - Authorised IP ranges – IPv4 and IPv6
+  - Control of inbound network (from other to the instance)
+  - Control of outbound network (from the instance to other)
+
+## Security Groups – Good to know
+
+- Can be attached to multiple instances
+- Locked down to a region / VPC combination
+- Does live "outside" the EC2 – if traffic is blocked the EC2 instance won’t see it
+- It's good to maintain one separate security group for SSH access
+- If your application is not accessible (time out), then it’s a security group issue
+- If your application gives a "connection refused" error, then it’s an application error or it’s not launched
+- All inbound traffic is blocked by default
+- All outbound traffic is authorised by default
+
+## Classic Ports to know
+
+- 22 = SSH (Secure Shell) – log into a Linux instance
+- 21 = FTP (File Transfer Protocol) – upload files into a file share
+- 22 = SFTP (Secure File Transfer Protocol) – upload files using SSH
+- 80 = HTTP – access unsecured websites
+- 443 = HTTPS – access secured websites
+- 3389 = RDP (Remote Desktop Protocol) – log into a Windows instance
+
+## EC2 Instances Purchasing Options
+
+- On-Demand Instances – short workload, predictable pricing, pay by second
+- Reserved (1 & 3 years)
+  - Reserved Instances – long workloads
+  - Convertible Reserved Instances – long workloads with flexible instances
+- Savings Plans (1 & 3 years) – commitment to an amount of usage, long workload
+- Spot Instances – short workloads, cheap, can lose instances (less reliable)
+- Dedicated Hosts – book an entire physical server, control instance placement
+- Dedicated Instances – no other customers will share your hardware
+- Capacity Reservations – reserve capacity in a specific AZ for any duration
+
+## EC2 On Demand
+
+- Pay for what you use:
+  - Linux or Windows – billing per second, after the first minute
+  - All other operating systems – billing per hour
+- Has the highest cost but no upfront payment
+- No long-term commitment
+- Recommended for **short-term** and **un-interrupted workloads**, where you can't predict how the application will behave
+
+## EC2 Reserved Instances
+
+- Up to 72% discount compared to On-demand
+- You reserve a specific instance attributes (Instance Type, Region, Tenancy, OS)
+- Reservation Period – 1 year (+discount) or 3 years (+++discount)
+- Payment Options – No Upfront (+), Partial Upfront (++), All Upfront (+++)
+- Reserved Instance’s Scope – Regional or Zonal (reserve capacity in an AZ)
+- Recommended for steady-state usage applications (think database)
+- You can buy and sell in the Reserved Instance Marketplace
+
+### Convertible Reserved Instance
+
+- Can change the EC2 instance type, instance family, OS, scope and tenancy
+- Up to 66% discount
+
+## EC2 Savings Plans
+
+- Get a discount based on long-term usage (up to 72% – same as RIs)
+- Commit to a certain type of usage ($10/hour for 1 or 3 years)
+- Usage beyond EC2 Savings Plans is billed at the On-Demand price
+- Locked to a specific instance family & AWS region (e.g., M5 in us-east-1)
+- Flexible across:
+  - Instance Size (e.g., m5.xlarge, m5.2xlarge)
+  - OS (e.g., Linux, Windows)
+  - Tenancy (Host, Dedicated, Default)
+
+## EC2 Spot Instances
+
+- Can get a discount of up to 90% compared to On-demand
+- Instances that you can "lose" at any point of time if your max price is less than the current spot price
+- The MOST cost-efficient instances in AWS
+
+### Useful for workloads that are resilient to failure
+
+- Batch jobs
+- Data analysis
+- Image processing
+- Any **distributed** workloads
+- Workloads with a flexible start and end time
+
+- Not suitable for critical jobs or databases
+
+## EC2 Dedicated Hosts
+
+- A physical server with EC2 instance capacity fully dedicated to your use
+- Allows you to address **compliance requirements** and **use your existing server-bound software licenses** (per-socket, per-core, per-VM software licenses)
+
+### Purchasing Options
+- **On-demand** – pay per second for active Dedicated Host
+- **Reserved** – 1 or 3 years (No Upfront, Partial Upfront, All Upfront)
+
+- The most expensive option
+
+### Useful for
+- Software that has complicated licensing model (BYOL – Bring Your Own License)
+- Companies that have strong regulatory or compliance needs
+
+## EC2 Dedicated Instances
+
+- Instances run on hardware that's dedicated to you
+- May share hardware with other instances in the same account
+- No control over instance placement (can move hardware after Stop/Start)
+
+## EC2 Capacity Reservations
+
+- Reserve On-Demand instances capacity in a specific AZ for any duration
+- You always have access to EC2 capacity when you need it
+- No time commitment (create/cancel anytime), no billing discounts
+- Combine with Regional Reserved Instances and Savings Plans to benefit from billing discounts
+- You're charged at On-Demand rate whether you run instances or not
+- Suitable for short-term, uninterrupted workloads that need to be in a specific AZ
+
+## Which purchasing option is right for me?
+
+- **On demand**: coming and staying in resort whenever we like, we pay the full price
+- **Reserved**: like planning ahead and if we plan to stay for a long time, we may get a good discount
+- **Savings Plans**: pay a certain amount per hour for certain period and stay in any room type (e.g., King, Suite, Sea View, ...)
+- **Spot instances**: the hotel allows people to bid for the empty rooms and the highest bidder keeps the rooms. You can get kicked out at any time
+- **Dedicated Hosts**: We book an entire building of the resort
+- **Capacity Reservations**: you book a room for a period with full price even you don't stay in it
+
+## AWS charges for IPv4 addresses
+
+- Starting February 1st 2024, there's a charge for all Public IPv4 created in your account
+- $0.005 per hour of Public IPv4 (~ $3.6 per month)
+- For new accounts in AWS, you have a free tier for the EC2 service: 750 hours of Public IPv4 per month for the first 12 months
+- For all other services there is no free tier
+
+### What about IPv6?
+- Unfortunately, many Internet Service Provider (ISP) around the world don’t support IPv6, so the course would not work for some of you
+- You can test IPv6 by going to [https://test-ipv6.com/](https://test-ipv6.com/)
+- If you use IPv6 in this course, you're on your own (security groups, networking...) but you can do it!
+
+### How to troubleshoot charges?
+- Go into your AWS Bill
+- Look into the AWS Public IP Insights service
+
+## EC2 Spot Instance Requests
+
+- Can get a discount of up to 90% compared to On-demand
+
+- Define **max spot price** and get the instance while **current spot price < max**
+  - The hourly spot price varies based on offer and capacity
+  - If the current spot price > your max price you can choose to **stop** or **terminate** your instance with a 2 minutes grace period
+
+- Other strategy: **Spot Block**
+  - "Block" spot instance during a specified time frame (1 to 6 hours) without interruptions
+  - In rare situations, the instance may be reclaimed
+
+- Used for batch jobs, data analysis, or workloads that are resilient to failures
+
+- Not great for critical jobs or databases
+
+## How to terminate Spot Instances?
+
+- Spot request parameters:
+  - Maximum price
+  - Desired number of instances
+  - Launch specification
+  - Request type: one-time | persistent
+  - Valid from, Valid until
+
+- Spot request lifecycle:
+  - **Create request** → request becomes **open**
+  - **Open** → can go to **active**, **failed**, or **cancelled**
+  - **Active** → 
+    - For **persistent** requests: can become **disabled** 
+    - For **one-time** requests: can become **closed**
+  - **Cancelled** → end state
+
+- **You can only cancel Spot Instance requests that are open, active, or disabled**
+
+- **Cancelling a Spot Request does not terminate instances**
+
+- You must **first cancel** the Spot Request, **then terminate** the associated Spot Instances
+
+[Reference: AWS Documentation](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/spot-requests.html)
+
+## Spot Fleets
+
+- **Spot Fleets** = set of Spot Instances + (optional) On-Demand Instances
+
+- The Spot Fleet will try to meet the target capacity with price constraints:
+  - Define possible launch pools: instance type (e.g., m5.large), OS, Availability Zone
+  - Can have multiple launch pools, so that the fleet can choose
+  - Spot Fleet stops launching instances when reaching capacity or max cost
+
+- **Strategies to allocate Spot Instances:**
+  - **lowestPrice**: from the pool with the lowest price (cost optimization, short workload)
+  - **diversified**: distributed across all pools (great for availability, long workloads)
+  - **capacityOptimized**: pool with the optimal capacity for the number of instances
+  - **priceCapacityOptimized (recommended)**: pools with highest capacity available, then select the pool with the lowest price (best choice for most workloads)
+
+- **Spot Fleets allow us to automatically request Spot Instances with the lowest price**
